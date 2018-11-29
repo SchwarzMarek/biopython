@@ -7,10 +7,10 @@ def ascii_frames(seq, table=1, translation_check=True):
 
     6 frame translation plot allows explore potential ORFs present depending on chosen coding table.
 
-    The marks are centered on the respective codon. Thus:
-           start  codon  stop  stop coding
+    The marks are centered on the respective codon.
+    ->     start  codon   stop  stop_coding
     mark:    >-    ---     |       -|
-    codon:  AUG    TTT    TAG      TAG
+    codon:  ATG    TTT    TAG      TAG
 
     If translation table with ambiguous stop is requested the stop is denoted by "!" instead of "|" and the orf
       translation is not interrupted.
@@ -20,6 +20,7 @@ def ascii_frames(seq, table=1, translation_check=True):
     keys: [-1, -2. -3] for [0, 1, 2] offset respectively in - strand.
 
     Note that this is not an ORF prediction tool!
+
     Code based on "six_frame_translations" and output appearance inspired by frameplot
       (reference: http://www0.nih.go.jp/~jun/cgi-bin/frameplot.pl, https://doi.org/10.1016/0378-1119(84)90116-1).
 
@@ -54,7 +55,6 @@ def ascii_frames(seq, table=1, translation_check=True):
     ...
     Bio.Data.CodonTable.TranslationError: Codon 'CG?' is invalid
     """
-
     try:
         t = CodonTable.ambiguous_dna_by_id[int(table)]
     except ValueError:
@@ -104,16 +104,16 @@ def ascii_frames(seq, table=1, translation_check=True):
 
     preformat = {}
     lsu = len(seq)
-    preformat[3] = '==' + desc[3] + '{}'.format('='*(lsu - len(desc[3]) - 2))
-    preformat[2] = '=' + desc[2] + '{}'.format('='*(lsu - len(desc[2]) - 1))
-    preformat[1] = desc[1] + '{}'.format('='*(lsu - len(desc[1])))
+    preformat[3] = '==' + desc[3] + '{}'.format('=' * (lsu - len(desc[3]) - 2))
+    preformat[2] = '=' + desc[2] + '{}'.format('=' * (lsu - len(desc[2]) - 1))
+    preformat[1] = desc[1] + '{}'.format('=' * (lsu - len(desc[1])))
 
-    p1 = '='*(lsu - len(desc[-1]))
-    preformat[-1] = p1 + desc[-1] + '{}'.format('='*(lsu - len(desc[-1]) - len(p1)))
-    p2 = '='*(lsu - len(desc[-2]) - 1)
-    preformat[-2] = p2 + desc[-2] + '{}'.format('='*(lsu - len(desc[-2]) - len(p2)))
-    p3 = '='*(lsu - len(desc[-3]) - 2)
-    preformat[-3] = p3 + desc[-3] + '{}'.format('='*(lsu - len(desc[-3]) - len(p3)))
+    p1 = '=' * (lsu - len(desc[-1]))
+    preformat[-1] = p1 + desc[-1] + '{}'.format('=' * (lsu - len(desc[-1]) - len(p1)))
+    p2 = '=' * (lsu - len(desc[-2]) - 1)
+    preformat[-2] = p2 + desc[-2] + '{}'.format('=' * (lsu - len(desc[-2]) - len(p2)))
+    p3 = '=' * (lsu - len(desc[-3]) - 2)
+    preformat[-3] = p3 + desc[-3] + '{}'.format('=' * (lsu - len(desc[-3]) - len(p3)))
 
     return preformat
 
@@ -138,7 +138,6 @@ def _find_orfs(seq, start, stop, am_stop):
 
     Note that start stop and am_stop must not include same codons. This is not checked.
     """
-
     frame = []
     for j in range(0, len(seq), 3):
         cod = seq[j:j + 3]
@@ -197,7 +196,7 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
     6 frame translation plot allows explore potential ORFs present depending on chosen coding table.
 
     The marks are centered on the respective codon. Thus:
-           start  codon  stop  stop coding
+    =      start  codon  stop  stop coding
     mark:    >-    ---     |       -|
     codon:  AUG    TTT    TAG      TAG
 
@@ -205,6 +204,7 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
       translation is not interrupted.
 
     Note that this is not an ORF prediction tool!
+
     Code based on "six_frame_translations" and output appearance inspired by frameplot
       (reference: http://www0.nih.go.jp/~jun/cgi-bin/frameplot.pl, https://doi.org/10.1016/0378-1119(84)90116-1).
 
@@ -327,6 +327,7 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
         res += '2 ' + desc[-2][i:i + linelength] + '\n'
         res += '3 ' + desc[-3][i:i + linelength] + '\n\n'
     return res
+
 
 if __name__ == "__main__":
     import doctest
