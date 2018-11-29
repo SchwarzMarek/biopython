@@ -190,7 +190,7 @@ def _find_orfs(seq, start, stop, am_stop):
     return ''.join(s)
 
 
-def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
+def ascii_frameplot(seq, table=1, translation_check=True, linelength=60):
     """Return strings representing all possible ORFs in 6-frames for given sequence.
 
     6 frame translation plot allows explore potential ORFs present depending on chosen coding table.
@@ -209,7 +209,7 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
       (reference: http://www0.nih.go.jp/~jun/cgi-bin/frameplot.pl, https://doi.org/10.1016/0378-1119(84)90116-1).
 
     :param seq:               [str] sequence to make a plot for
-    :param genetic_code:      [int optional] ncbi genetic code to use (start codons must be different then stop codons)
+    :param table:             [int optional] ncbi genetic code to use (start codons must be different then stop codons)
     :param translation_check: [bool optional] if translation of each frame should be conducted
         (raises error when ambiguous bases are present)
     :param linelength:        [int optional] sequence length which is to be printed on one line
@@ -307,7 +307,7 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
     ""
     <BLANKLINE>
     """
-    desc = ascii_frames(seq, genetic_code, translation_check)
+    desc = ascii_frames(seq, table, translation_check)
 
     comp = reverse_complement(seq)[::-1]
 
