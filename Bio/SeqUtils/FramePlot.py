@@ -25,30 +25,29 @@ def ascii_frames(seq, table=1, translation_check=True):
 
     :param seq: [str] sequence to make a plot for
     :param table: [int str CodonTable] genetic code table to use (start codons must be different then stop codons)
-    :param translation_check: [bool] if translation of each frame should be conducted (raises error when ambiguous bases are present)
+    :param translation_check: [bool] if translation of each frame should be conducted
+        (raises error when ambiguous bases are present)
 
     >>> from Bio.SeqUtils.FramePlot import ascii_frames
     >>> res = ascii_frames('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC')
-    >>> type(res)
-    <class 'dict'>
     >>> for i in [-3, -2, -1, 1, 2, 3]:
     ...    print('"' + res[i] + '"')
-    "-------<                         "
-    "-<                               "
-    "    |                            "
-    "                               | "
-    "                                 "
-    " >-----------|              >----"
+    "-------<                         =="
+    "=-<                               ="
+    "==    |                            "
+    "                               | =="
+    "=                                 ="
+    "== >-----------|              >----"
 
     >>> res = ascii_frames('ACATGTCAGTCGTGTGATCGTGTACGTCG?ATGATC', translation_check=False)
     >>> for i in [-3, -2, -1, 1, 2, 3]:
     ...    print('"' + res[i] + '"')
-    -------<
-    -<
-        |
-                          |
-
-     >-----------|     >----------------
+    "=-<                               =="
+    "==    |                            ="
+    "-------<                            "
+    "                               >----"
+    "=                               | =="
+    "== >-----------|                   ="
 
     >>> res = ascii_frames('ACATGTCAGTCGTGTGATCGTGTACGTCG?ATGATC', translation_check=True)
     Traceback (most recent call last):
@@ -103,10 +102,43 @@ def ascii_frames(seq, table=1, translation_check=True):
                 sequence=anti[i:i + fragment_length],
                 table=t)[::-1]
 
-    return desc
+    preformat = {}
+    lsu = len(seq)
+    preformat[3] = '==' + desc[3] + '{}'.format('='*(lsu - len(desc[3]) - 2))
+    preformat[2] = '=' + desc[2] + '{}'.format('='*(lsu - len(desc[2]) - 1))
+    preformat[1] = desc[1] + '{}'.format('='*(lsu - len(desc[1])))
+
+    p1 = '='*(lsu - len(desc[-1]))
+    preformat[-1] = p1 + desc[-1] + '{}'.format('='*(lsu - len(desc[-1]) - len(p1)))
+    p2 = '='*(lsu - len(desc[-2]) - 1)
+    preformat[-2] = p2 + desc[-2] + '{}'.format('='*(lsu - len(desc[-2]) - len(p2)))
+    p3 = '='*(lsu - len(desc[-3]) - 2)
+    preformat[-3] = p3 + desc[-3] + '{}'.format('='*(lsu - len(desc[-3]) - len(p3)))
+
+    return preformat
 
 
 def _find_orfs(seq, start, stop, am_stop):
+    """Find and annotate ORF in sequence. Return string representation. The annotation is codon centered.
+
+    >>> ss = 'ACATGTCAGTCGATGTGATCGTGTACGTCGATGATC'
+    >>> print(_find_orfs(ss, {'ATG'}, {'TCA'}, {}))
+                 >----------------->----
+
+    >>> print(_find_orfs(ss, {'ATG'}, {'TCG'}, {}))
+              |  >-----|        |  >----
+
+    >>> print(_find_orfs(ss, {'ATG'}, {}, {'TCG'}))
+              !  >-----!--------!-->----
+
+    :param seq: [str] sequence to translate. Len should be multiple of 3.
+    :param start: [set list tuple] list of codons to use as start.
+    :param stop: [set list tuple] list of codons to use as stop.
+    :param am_stop: [set list tuple] list of codons to use as ambiguous stop.
+
+    Note that start stop and am_stop must not include same codons. This is not checked.
+    """
+
     frame = []
     for j in range(0, len(seq), 3):
         cod = seq[j:j + 3]
@@ -178,65 +210,102 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
 
     :param seq:               [str] sequence to make a plot for
     :param genetic_code:      [int optional] ncbi genetic code to use (start codons must be different then stop codons)
-    :param translation_check: [bool optional] if translation of each frame should be conducted (raises error when ambiguous bases are present)
-    :param linelength:        [int optional] sequence length which is to be printed on one line (the actual string is 2 chars longer)
+    :param translation_check: [bool optional] if translation of each frame should be conducted
+        (raises error when ambiguous bases are present)
+    :param linelength:        [int optional] sequence length which is to be printed on one line
+        (the actual string is 2 chars longer)
 
     >>> from Bio.SeqUtils.FramePlot import ascii_frameplot
-    >>> print(ascii_frameplot('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC'))
-    3    >-----------|              >----
-    2
-    1                                |
-    5'ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC
-    3'TGTACAGTCAGCACACTAGCACATGCAGCTACTAG
-    1       |
-    2  -<
-    3 -------<
+    >>> res = ascii_frameplot('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC')
+    >>> print(''.join(['"' + i + '"' + chr(10) for i in res.split(chr(10))]))
+    "3 == >-----------|              >----"
+    "2 =                                 ="
+    "1                                | =="
+    "5'ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC"
+    "3'TGTACAGTCAGCACACTAGCACATGCAGCTACTAG"
+    "1 ==    |                            "
+    "2 =-<                               ="
+    "3 -------<                         =="
+    ""
+    ""
     <BLANKLINE>
-    <BLANKLINE>
-
 
     Use different translation table.
 
-    >>> print(ascii_frameplot('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC', 11))
-    3    >-------->--|     >----------->-->-
-    2               >-->-------------------
-    1                       |           |
-    5'ACATGTCAGTCGTGTGATCGTTGAGTACGTCGATGATC
-    3'TGTACAGTCAGCACACTAGCAACTCATGCAGCTACTAG
-    1       |
-    2  -<-----------------------------<--<
-    3 -------<--------<
+    >>> res = ascii_frameplot('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC', 11)
+    >>> print(''.join(['"' + i + '"' + chr(10) for i in res.split(chr(10))]))
+    "3 == >-------->--|              >-->-"
+    "2 =             >-->-->-------------="
+    "1                                | =="
+    "5'ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC"
+    "3'TGTACAGTCAGCACACTAGCACATGCAGCTACTAG"
+    "1 ==    |                            "
+    "2 =-<--------------------------<--< ="
+    "3 -------<--------<                =="
+    ""
+    ""
+    <BLANKLINE>
 
-    Use ambiguous translation table
+    Use ambiguous translation table. Note that BiopythonWarning is also raised.
 
-    >>> print(ascii_frameplot('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC', 27))
-    3    >-----------!----------------->----
-    2
-    1                       !           !
-    5'ACATGTCAGTCGTGTGATCGTTGAGTACGTCGATGATC
-    3'TGTACAGTCAGCACACTAGCAACTCATGCAGCTACTAG
-    1       !
-    2  -<
-    3
+    >>> res = ascii_frameplot('ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC', 27)
+    >>> print(''.join(['"' + i + '"' + chr(10) for i in res.split(chr(10))]))
+    "3 == >-----------!-------------->----"
+    "2 =                                 ="
+    "1                                ! =="
+    "5'ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC"
+    "3'TGTACAGTCAGCACACTAGCACATGCAGCTACTAG"
+    "1 ==    !                            "
+    "2 =-<                               ="
+    "3                                  =="
+    ""
+    ""
+    <BLANKLINE>
 
     Show behavior with non-standard bases.
 
-    >>> print(ascii_frameplot('ACATGTCAGTCGTGTGATCGTTGAGTACGTCGAT?ATC', translation_check=False))
-    res = ascii_frameplot(ss, translation_check=False)
-    3    >-----------|     >----------------
-    2
-    1                       |
-    5'ACATGTCAGTCGTGTGATCGTTGAGTACGTCGAT?ATC
-    3'TGTACAGTCAGCACACTAGCAACTCATGCAGCTA?TAG
-    1       |
-    2  -<
-    3 -------<
+    >>> res = ascii_frameplot('ACATGTCAGTCGTGTGATCGTTGAGTACGTCGAT?ATC', translation_check=False)
+    >>> print(''.join(['"' + i + '"' + chr(10) for i in res.split(chr(10))]))
+    "3 == >-----------|     >----------------"
+    "2 =                                    ="
+    "1                       |             =="
+    "5'ACATGTCAGTCGTGTGATCGTTGAGTACGTCGAT?ATC"
+    "3'TGTACAGTCAGCACACTAGCAACTCATGCAGCTA?TAG"
+    "1 ==    |                               "
+    "2 =-<                                  ="
+    "3 -------<                            =="
+    ""
+    ""
+    <BLANKLINE>
 
-    >>> print(ascii_frameplot('ACATGTCAGTCGTGTGATCGTTGAGTACGTCGAT?ATC', translation_check=True))
+    >>> ascii_frameplot('ACATGTCAGTCGTGTGATCGTTGAGTACGTCGAT?ATC', translation_check=True)
     Traceback (most recent call last):
     ...
     Bio.Data.CodonTable.TranslationError: Codon 'T?A' is invalid
 
+
+    >>> res = ascii_frameplot('CGATCGTAGTCGATCGTGACTAGTCAGATCGCTAGTCGTAGCTACGTACGTCGATGC', 11, linelength=30)
+    >>> print(''.join(['"' + i + '"' + chr(10) for i in res.split(chr(10))]))
+    "3 == >-----------------|        "
+    "2 =                |            "
+    "1        |     >-->----------->-"
+    "5'CGATCGTAGTCGATCGTGACTAGTCAGATC"
+    "3'GCTAGCATCAGCTAGCACTGATCAGTCTAG"
+    "1 -------------------------<    "
+    "2 ==----------<           |--<  "
+    "3 =-<                 |         "
+    ""
+    "3    |     |              >-="
+    "2                          =="
+    "1 ---------------------------"
+    "5'GCTAGTCGTAGCTACGTACGTCGATGC"
+    "3'CGATCAGCATCGATGCATGCAGCTACG"
+    "1                            "
+    "2             |             ="
+    "3   |--------------------< =="
+    ""
+    ""
+    <BLANKLINE>
     """
     desc = ascii_frames(seq, genetic_code, translation_check)
 
@@ -244,24 +313,22 @@ def ascii_frameplot(seq, genetic_code=1, translation_check=True, linelength=60):
 
     res = ''
     for i in range(0, len(seq), linelength):
-        subseq = seq[i:i + 60]
-        csubseq = comp[i:i + 60]
-        res += '3   ' + desc[3] + '\n'
-        res += '2  ' + desc[2] + '\n'
-        res += '1 ' + desc[1] + '\n'
+        subseq = seq[i:i + linelength]
+        csubseq = comp[i:i + linelength]
+
+        res += '3 ' + desc[3][i:i + linelength] + '\n'
+        res += '2 ' + desc[2][i:i + linelength] + '\n'
+        res += '1 ' + desc[1][i:i + linelength] + '\n'
+
         res += "5'" + subseq + '\n'
         res += "3'" + csubseq + '\n'
-        res += '1   ' + desc[-1] + ' \n'
-        res += '2  ' + desc[-2] + '\n'
-        res += '3 ' + desc[-3] + '\n\n'
 
+        res += '1 ' + desc[-1][i:i + linelength] + '\n'
+        res += '2 ' + desc[-2][i:i + linelength] + '\n'
+        res += '3 ' + desc[-3][i:i + linelength] + '\n\n'
     return res
 
-if __name__ == '__main__':
-    ss = 'ACATGTCAGTCGTGTGATCGTGTACGTCGATGATC'
-    res = ascii_frameplot(ss, translation_check=True)
-    print(res)
-
-# if __name__ == "__main__":
-#     from Bio._utils import run_doctest
-#     run_doctest()
+if __name__ == "__main__":
+    import doctest
+    from Bio._utils import run_doctest
+    run_doctest(optionflags=doctest.IGNORE_EXCEPTION_DETAIL)
